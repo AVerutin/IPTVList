@@ -3,12 +3,16 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    sdb = new Database();
+
     createMenu();
     createWidget();
+    showChannels();
 }
 
 MainWindow::~MainWindow()
 {
+    sdb->dbClose();
 }
 
 
@@ -16,6 +20,8 @@ MainWindow::~MainWindow()
 void MainWindow::createWidget()
 {
     tvChannels = new QTableView(this);
+    model = new QStandardItemModel(this);
+    tvChannels->setModel(model);
 
     statBar = statusBar();
     statBar->setSizeGripEnabled(false);
@@ -32,6 +38,34 @@ void MainWindow::createWidget()
     setFixedSize(750, 550);
     setWindowTitle("База каналов IPTV");
     setWindowIcon(QIcon(":/icons/icon.ico"));
+}
+
+
+/// Вывести список каналов из базы данных
+void MainWindow::showChannels()
+{
+    QList<ChannelInfo> channels = sdb->getChannelsList();
+    model->clear();
+
+    for(int i=0; i<channels.count(); i++)
+    {
+        QList<QStandardItem *> items;
+        items.append(new QStandardItem(QString::number(channels[i].id)));
+        items.append(new QStandardItem(channels[i].name));
+        items.append(new QStandardItem(channels[i].groupName));
+        items.append(new QStandardItem(channels[i].url));
+
+        model->appendRow(items);
+    }
+
+    model->setHorizontalHeaderLabels(QStringList() <<"№" << "Имя" << "Группа" << "Источник");
+    // tvChannels->resizeColumnToContents(0);
+    // tvChannels->resizeColumnToContents(1);
+    // tvChannels->resizeColumnToContents(2);
+    tvChannels->setColumnWidth(0, 25);
+    tvChannels->setColumnWidth(1, 100);
+    tvChannels->setColumnWidth(2, 120);
+    tvChannels->setColumnWidth(3, 245);
 }
 
 
@@ -112,13 +146,41 @@ void MainWindow::createMenu()
 
 
 /// Реализация слотов
-///
 /// Импорт каналов из файла
 void MainWindow::slotImportChannels()
 {
-    QMessageBox::information(this, QString(tr("Внимание")),
-                                QString(tr("Импорт каналов из списка")),
-                                QMessageBox::Ok);
+    QString listFileName = QFileDialog::getOpenFileName(this,
+                                QString(tr("Открыть список воспроизведения")),
+                                QDir::currentPath(),
+                                tr("Списки воспроизведения (*.m3u *.m3u8);;Все файла (*.*)"));
+
+    // Пользователь отменил открытие файла
+    if(listFileName.isEmpty())
+      return;
+
+    QString msg = tr("Читаем файл [%1]...");
+    msg = msg.arg(listFileName);
+    statBar->showMessage(msg);
+
+    // Получаем список каналов из списка
+    parser = new Parser(listFileName);
+    Playlist playlist = parser->parse();
+    QList<Channel> channels = playlist.getChannelsList();
+    msg = "Получено каналов: %1. Сохраняем в БД...";
+    msg = msg.arg(channels.count());
+    statBar->showMessage(msg);
+
+    // Получаем список групп из базы данных
+    QList<Group> groups = sdb->getGroups();
+
+    // Получаем список звуковых дорожек из базы данных
+    QList<Soundtrack> tracks = sdb->getTracks();
+
+    // Сохранить полученный список каналов в базу данных
+    QList<Channel> saved = sdb->addChannels(channels);
+
+    msg = "Сохранено каналов: %1";
+    statBar->showMessage(msg);
 }
 
 

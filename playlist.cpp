@@ -436,6 +436,14 @@ Channel Playlist::getChannel(int uid)
 }
 
 
+/// Получить список каналов
+QList<Channel> Playlist::getChannelsList()
+{
+    QList<Channel> result = *channels;
+    return result;
+}
+
+
 /// Наименование списка
 void Playlist::setListName(const QString &name)
 {

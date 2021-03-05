@@ -3,7 +3,7 @@
 /// Конструктор по умолчанию
 Database::Database()
 {
-
+    dbInit();
 }
 
 
@@ -16,13 +16,14 @@ void Database::dbInit()
   //  sdb.setUserName("admin");
   //  sdb.setPassword("admin");
 
-  QString dbPath = QCoreApplication::applicationDirPath() + "/m3u.dat";
+  QString dbPath = QCoreApplication::applicationDirPath() + "/channels.dat";
   sdb.setDatabaseName(dbPath);
   query = new QSqlQuery;
 
 
   // Подключение к базе данных
-  if (!sdb.open()) {
+  if (!sdb.open())
+  {
         qDebug() << sdb.lastError().text();
   }
 
@@ -49,11 +50,9 @@ void Database::dbInit()
 
   str = "CREATE TABLE `channels` ("
         "`id`	INTEGER NOT NULL, "
-        "`playlist`	INTEGER NOT NULL, "
         "`name`	TEXT NOT NULL, "
-        "`source`	INTEGER NOT NULL, "
-        "`position`	INTEGER NOT NULL DEFAULT 0, "
-        "`crop`	INTEGER, "
+        "`url` TEXT NOT NULL, "
+        "`crop`	TEXT, "
         "`aspect`	TEXT, "
         "`user_agent`	TEXT, "
         "`http_reffer`	TEXT, "
@@ -65,11 +64,12 @@ void Database::dbInit()
         "`tvg_epg`	TEXT, "
         "`radio`	INTEGER, "
         "`recorded`	INTEGER, "
-        "`consored`	INTEGER, "
+        "`censored`	INTEGER, "
         "`age_restricred`	INTEGER, "
         "`mono`	INTEGER, "
         "`name_as_key`	INTEGER, "
         "`audio`	INTEGER, "
+        "`group`	INTEGER, "
         "PRIMARY KEY(`id` AUTOINCREMENT));";
   b = query->exec(str);
   if (!b)
@@ -160,20 +160,21 @@ void Database::dbClose()
 
 
 /// Получить список групп из базы данных
-QStringList Database::getGroups()
+QList<Group> Database::getGroups()
 {
-  QStringList result;
-  if (!query->exec("SELECT `group` FROM `groups` ORDER BY `group`;"))
+  QList<Group> result;
+  if (!query->exec("SELECT `id`, `group` FROM `groups` ORDER BY `group`;"))
     {
       qDebug() << sdb.lastError().text();
     }
 
   QSqlRecord rec = query->record();
-  QString grp = "";
 
   while (query->next())
     {
-      grp = query->value(rec.indexOf("group")).toString();
+      Group grp;
+      grp.setId(query->value(rec.indexOf("id")).toInt());
+      grp.setName(query->value(rec.indexOf("group")).toString());
       result.append(grp);
     }
 
@@ -182,29 +183,30 @@ QStringList Database::getGroups()
 
 
 /// Добавить группу в базу данных
-bool Database::addGroup(const QString &grpName)
+QList<Group> Database::addGroup(const QString &grpName)
 {
-  bool result = false;
   if(!grpName.isEmpty())
     {
       QString queryString = "INSERT INTO `groups` (`group`) "
               "VALUES ('%1');";
       queryString = queryString.arg(grpName);
-      result = query->exec(queryString);
-      if (!result)
+
+      int res = query->exec(queryString);
+      if (!res)
         {
           qDebug() << sdb.lastError().text();
         }
     }
+
+  QList<Group> result = getGroups();
 
   return result;
 }
 
 
 /// Добавить список групп
-bool Database::addGroups(const QStringList &grps)
+QList<Group> Database::addGroups(const QStringList &grps)
 {
-  bool result = false;
   if(grps.size()>0)
     {
       QString queryString = "";
@@ -213,67 +215,72 @@ bool Database::addGroups(const QStringList &grps)
           queryString = "INSERT INTO `groups` (`group`) VALUES ('%1');\n";
           queryString = queryString.arg(grps.at(i));
 
-          result = query->exec(queryString);
-          if (!result)
+          int res = query->exec(queryString);
+          if (!res)
             {
               qDebug() << sdb.lastError().text();
             }
         }
     }
 
+  QList<Group> result = getGroups();
   return result;
 }
 
 
 /// Удалить группу из базы данных
-bool Database::removeGroup(const QString &grpName)
+QList<Group> Database::removeGroup(Group group)
 {
-  bool result = false;
-  if(!grpName.isEmpty())
+  int id = group.getId();
+  if(id>0)
     {
-      QString queryString = "DELETE FROM `groups` WHERE `group` = '%1';";
-      queryString = queryString.arg(grpName);
-      result = query->exec(queryString);
-      if (!result)
+      QString queryString = "DELETE FROM `groups` WHERE `id` = '%1';";
+      queryString = queryString.arg(id);
+
+      int res = query->exec(queryString);
+      if (!res)
         {
           qDebug() << sdb.lastError().text();
         }
     }
 
+  QList<Group> result = getGroups();
   return result;
 }
 
 
 /// Очистить список групп
-bool Database::clearGroups()
+QList<Group> Database::clearGroups()
 {
-  bool result = false;
   QString queryString = "DELETE FROM `groups`;";
-  result = query->exec(queryString);
-  if (!result)
+
+  int res = query->exec(queryString);
+  if (!res)
     {
       qDebug() << sdb.lastError().text();
     }
 
+  QList<Group> result = getGroups();
   return result;
 }
 
 
 /// Получить список звуковых дорожек из базы данных
-QStringList Database::getTracks()
+QList<Soundtrack> Database::getTracks()
 {
-  QStringList result;
-  if (!query->exec("SELECT `track` FROM `tracks` ORDER BY `track`;"))
+  QList<Soundtrack> result;
+  if (!query->exec("SELECT `id`, `track` FROM `tracks` ORDER BY `track`;"))
     {
       qDebug() << sdb.lastError().text();
     }
 
   QSqlRecord rec = query->record();
-  QString track = "";
 
   while (query->next())
     {
-      track = query->value(rec.indexOf("track")).toString();
+      Soundtrack track;
+      track.setId(query->value(rec.indexOf("id")).toInt());
+      track.setName(query->value(rec.indexOf("track")).toString());
       result.append(track);
     }
 
@@ -282,28 +289,28 @@ QStringList Database::getTracks()
 
 
 /// Добавить звуковую дорожку в базу данных
-bool Database::addTrack(const QString &trackName)
+QList<Soundtrack> Database::addTrack(const QString &trackName)
 {
-  bool result = false;
   if(!trackName.isEmpty())
     {
       QString queryString = "INSERT INTO `tracks` (`track`) VALUES ('%1');";
       queryString = queryString.arg(trackName);
-      result = query->exec(queryString);
-      if (!result)
+
+      int res = query->exec(queryString);
+      if (!res)
         {
           qDebug() << sdb.lastError().text();
         }
     }
 
+  QList<Soundtrack> result = getTracks();
   return result;
 }
 
 
 /// Добавить список звуковых дорожек
-bool Database::addTracks(const QStringList &tracks)
+QList<Soundtrack> Database::addTracks(const QStringList &tracks)
 {
-  bool result = false;
   if(tracks.size()>0)
     {
       QString queryString = "";
@@ -312,48 +319,52 @@ bool Database::addTracks(const QStringList &tracks)
           queryString = "INSERT INTO `tracks` (`track`) VALUES ('%1');\n";
           queryString = queryString.arg(tracks.at(i));
 
-          result = query->exec(queryString);
-          if (!result)
+          int res = query->exec(queryString);
+          if (!res)
             {
               qDebug() << sdb.lastError().text();
             }
         }
     }
 
+  QList<Soundtrack> result = getTracks();
   return result;
 }
 
 
 /// Удалить звуковую дорожку из базы данных
-bool Database::removeTrack(const QString &trackName)
+QList<Soundtrack> Database::removeTrack(Soundtrack track)
 {
-  bool result = false;
-  if(!trackName.isEmpty())
+  int id = track.getId();
+  if(id>0)
     {
-      QString queryString = "DELETE FROM `tracks` WHERE `track` = '%1';";
-      queryString = queryString.arg(trackName);
-      result = query->exec(queryString);
-      if (!result)
+      QString queryString = "DELETE FROM `tracks` WHERE `id` = '%1';";
+      queryString = queryString.arg(id);
+
+      int res = query->exec(queryString);
+      if (!res)
         {
           qDebug() << sdb.lastError().text();
         }
     }
 
+  QList<Soundtrack> result = getTracks();
   return result;
 }
 
 
 /// Очистить список звуковых дорожек
-bool Database::clearTracks()
+QList<Soundtrack> Database::clearTracks()
 {
-  bool result = false;
   QString queryString = "DELETE FROM `tracks`;";
-  result = query->exec(queryString);
-  if (!result)
+
+  int res = query->exec(queryString);
+  if (!res)
     {
       qDebug() << sdb.lastError().text();
     }
 
+  QList<Soundtrack> result = getTracks();
   return result;
 }
 
@@ -365,12 +376,12 @@ bool Database::addChannel(const PlaylistInfo &playlist, const ChannelInfo &chann
   if(channel.name!="" && playlist.listId!=0)
     {
       QString queryStr = "INSERT INTO `channels` ("
-        "`playlist`, `name`, `source`, `position`, `crop`, `aspect`, `user_agent`, "
+        "`playlist`, `name`, `url`, `position`, `crop`, `aspect`, `user_agent`, "
         "`http_reffer`, `duration`, `tvg_name`, `tvg_logo`, `tvg_shift`, `tvg_group`, "
-        "`tvg_epg`, `radio`, `recorded`, `consored`, `age_restricred`, `mono`, `name_as_key`, "
+        "`tvg_epg`, `radio`, `recorded`, `censored`, `age_restricred`, `mono`, `name_as_key`, "
         "`audio`) VALUES (%1, '%2', %3, %4, %5, '%6', '%7', '%8', %9, '%10',"
         "'%11', %12, '%13', '%14', %15, %16, %17, %18, %19, %20, %21);";
-      queryStr = queryStr.arg(QString::number(playlist.listId), QString::number(channel.id), channel.source, QString::number(channel.position));
+      queryStr = queryStr.arg(QString::number(playlist.listId), QString::number(channel.id), channel.url, QString::number(channel.position));
       queryStr = queryStr.arg(channel.crop, channel.aspect, channel.vlcInfo.userAgent, channel.vlcInfo.httpReferrer, QString::number(channel.duration));
       queryStr = queryStr.arg(channel.tvgName, channel.tvgLogo, QString::number(channel.tvgShift), channel.groupName, channel.tvgEpg);
       queryStr = queryStr.arg(QString::number(channel.radio), QString::number(channel.recordable), QString::number(channel.censored), QString::number(channel.ageRestrict));
@@ -387,13 +398,73 @@ bool Database::addChannel(const PlaylistInfo &playlist, const ChannelInfo &chann
 }
 
 
+/// Сохранить список каналов в базу данных
+QList<Channel> Database::addChannels(const QList<Channel> channels)
+{
+    QString strQuery = "INSERT INTO `channels` () VALUES ()";
+    if(channels.count()>0)
+    {
+        for(int i=0; i<channels.count(); i++)
+        {
+
+        }
+    }
+
+    QList<Channel> result;
+    return result;
+}
+
+
+/// Получить спиок каналов из базы данных
+QList<ChannelInfo> Database::getChannelsList()
+{
+    QList<ChannelInfo> result;
+    if (!query->exec("SELECT * FROM `channels` ORDER BY `name`;"))
+    {
+        qDebug() << sdb.lastError().text();
+    }
+
+    while (query->next())
+    {
+        ChannelInfo row;
+        row.name = query->value(2).toString();
+        row.url = query->value(3).toString();
+        row.position = query->value(4).toInt();
+        row.crop = query->value(5).toString();
+        row.aspect = query->value(6).toString();
+        row.vlcInfo.userAgent = query->value(7).toString();
+        row.vlcInfo.httpReferrer = query->value(8).toString();
+        row.duration = query->value(9).toInt();
+        row.tvgName = query->value(10).toString();
+        row.tvgLogo = query->value(11).toString();
+        row.tvgShift = query->value(12).toInt();
+        row.groupName = query->value(13).toString();
+        row.tvgEpg = query->value(14).toString();
+        row.radio = query->value(15).toBool();
+        row.recordable = query->value(16).toBool();
+        row.censored = query->value(17).toBool();
+        row.ageRestrict = query->value(18).toBool();
+        row.mono = query->value(19).toBool();
+        row.nameAsKey = query->value(20).toBool();
+        row.audioTrack = query->value(21).toString();
+
+        result.append(row);
+    }
+
+    return result;
+}
+
+
 /// Получить канал из базы данных по имени
 ChannelInfo Database::getChannel(const QString &chName)
 {
   ChannelInfo result;
   if(!chName.isEmpty())
     {
-      if (!query->exec("SELECT * FROM `channels` WHERE `name`='';"))
+      QString str = "SELECT * FROM `channels` WHERE `name`='%1';";
+      str = str.arg(chName);
+
+      if (!query->exec(str))
         {
           qDebug() << sdb.lastError().text();
         }
@@ -401,7 +472,7 @@ ChannelInfo Database::getChannel(const QString &chName)
       while (query->next())
         {
           result.name = query->value(2).toString();
-          result.source = query->value(3).toString();
+          result.url = query->value(3).toString();
           result.position = query->value(4).toInt();
           result.crop = query->value(5).toString();
           result.aspect = query->value(6).toString();
@@ -447,74 +518,6 @@ bool Database::addPlaylist(const PlaylistInfo &pl)
         }
     }
 
-  return result;
-}
-
-
-/// Получить список категорий из базы данных
-QList<Group> Database::getGroupsList()
-{
-  QList<Group> result;
-  throw("Not implement method");
-  return result;
-}
-
-
-/// Добавить новую группу в базу данных
-void Database::addGroupToList(const Group &)
-{
-  throw("Not implement method");
-}
-
-
-/// Редактировать группу в базе данных по уникальному идентификатору
-bool Database::editGroupInList(int, const Group &)
-{
-  bool result = false;
-  throw("Not implement method");
-  return result;
-}
-
-
-/// Удалить группу из базы данных по уникальному идентификаору
-bool Database::removeGroupFromList(int)
-{
-  bool result = false;
-  throw("Not implement method");
-  return result;
-}
-
-
-/// Получить список звуковых дорожек из базы данных
-QList<Soundtrack> Database::getSoundtracksList()
-{
-  QList<Soundtrack> result;
-  throw("Not implement method");
-  return result;
-}
-
-
-/// Добавить новую звуковую дорожку в базу данных
-void Database::addSoundtrackToList(const Soundtrack &)
-{
-  throw("Not implement method");
-}
-
-
-/// Редактировать звуковую дорожку в базе данных по уникальному идентификатору
-bool Database::editSoundtrackInList(int, const Soundtrack &)
-{
-  bool result = false;
-  throw("Not implement method");
-  return result;
-}
-
-
-/// Удалить звуковую дорожку из базы данных по уникальному идентификатору
-bool Database::removeSoundtrackFromList(int)
-{
-  bool result = false;
-  throw("Not implement method");
   return result;
 }
 

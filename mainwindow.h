@@ -24,6 +24,9 @@ private:
     QMenuBar *mainMenu;
     QStatusBar *statBar;
     QTableView *tvChannels;
+    QStandardItemModel *model;
+    Database *sdb;
+    Parser *parser;
 
     // Элементы главного меню
     QMenu *mFile;
@@ -38,6 +41,7 @@ private:
     // Методы класса
     void createMenu();      // Создать главное меню приложения
     void createWidget();    // Создать главную форму приложения
+    void showChannels();    // Вывести список каналов из базы данных
 
 private slots:
     void slotImportChannels();  // Импорт каналов из списка

@@ -14,34 +14,25 @@ public:
   Database();
   void dbInit();
   void dbClose();
-  QStringList getGroups();
-  bool addGroup(const QString &);
-  bool addGroups(const QStringList &);
-  bool removeGroup(const QString &);
-  bool clearGroups();
-  QStringList getTracks();
-  bool addTrack(const QString &);
-  bool addTracks(const QStringList &);
-  bool removeTrack(const QString &);
-  bool clearTracks();
+  QList<Group> getGroups();
+  QList<Group> addGroup(const QString &);
+  QList<Group> addGroups(const QStringList &);
+  QList<Group> removeGroup(const Group);
+  QList<Group> clearGroups();
+  QList<Soundtrack> getTracks();
+  QList<Soundtrack> addTrack(const QString &);
+  QList<Soundtrack> addTracks(const QStringList &);
+  QList<Soundtrack> removeTrack(Soundtrack);
+  QList<Soundtrack> clearTracks();
   bool addChannel(const PlaylistInfo &, const ChannelInfo &);
+  QList<Channel> addChannels(const QList<Channel>);
+  QList<ChannelInfo> getChannelsList();
   ChannelInfo getChannel(const QString &);
   ChannelInfo getChannel(int);
   bool addPlaylist(const PlaylistInfo &);
   PlaylistInfo getPlaylist(const QString &);
   PlaylistInfo getPlaylist(int);
 
-  // Новые методы, для работы с группами в базе данных
-  QList<Group> getGroupsList();
-  void addGroupToList(const Group &);
-  bool editGroupInList(int, const Group &);
-  bool removeGroupFromList(int);
-
-  // Новые методы, для работы со звуковыми дорожками в базе данных
-  QList<Soundtrack> getSoundtracksList();
-  void addSoundtrackToList(const Soundtrack &);
-  bool editSoundtrackInList(int, const Soundtrack &);
-  bool removeSoundtrackFromList(int);
 
 private:
   QSqlDatabase sdb;

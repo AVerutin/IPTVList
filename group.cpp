@@ -2,24 +2,24 @@
 
 Group::Group()
 {
-  uid = -1;
+  id = -1;
   name = "";
 }
 
 Group::Group(const Group &item)
 {
-  uid = item.uid;
+  id = item.id;
   name = item.name;
 }
 
-int Group::getUid()
+int Group::getId()
 {
-  return uid;
+  return id;
 }
 
-void Group::setUid(int id)
+void Group::setId(int uid)
 {
-  uid = id;
+  id = uid;
 }
 
 QString Group::getName()

@@ -179,7 +179,6 @@ Channel &Channel::operator=(const Channel &source)
   channelInfo->nameAsKey = source.channelInfo->nameAsKey;
   channelInfo->crop = source.channelInfo->crop;
   channelInfo->mono = source.channelInfo->mono;
-  channelInfo->source = source.channelInfo->source;
   url = source.url;
   aspectRatio = source.aspectRatio;
   crop = source.crop;

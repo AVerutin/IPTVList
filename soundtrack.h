@@ -8,13 +8,13 @@ class Soundtrack
 public:
   Soundtrack();
   Soundtrack(const Soundtrack &);
-  int getUid();
-  void setUid(int);
+  int getId();
+  void setId(int);
   QString getName();
   void setName(const QString &);
 
 private:
-  int uid;
+  int id;
   QString name;
 };
 

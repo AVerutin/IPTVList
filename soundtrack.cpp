@@ -2,24 +2,24 @@
 
 Soundtrack::Soundtrack()
 {
-  uid = -1;
+  id = -1;
   name = "";
 }
 
 Soundtrack::Soundtrack(const Soundtrack &item)
 {
-  uid = item.uid;
+  id = item.id;
   name = item.name;
 }
 
-int Soundtrack::getUid()
+int Soundtrack::getId()
 {
-  return uid;
+  return id;
 }
 
-void Soundtrack::setUid(int id)
+void Soundtrack::setId(int uid)
 {
-  uid = id;
+  id = uid;
 }
 
 QString Soundtrack::getName()

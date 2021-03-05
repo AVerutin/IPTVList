@@ -8,13 +8,13 @@ class Group
 public:
   Group();
   Group(const Group &);
-  int getUid();
-  void setUid(int);
+  int getId();
+  void setId(int);
   QString getName();
   void setName(const QString &);
 
 private:
-  int uid;
+  int id;
   QString name;
 
 };

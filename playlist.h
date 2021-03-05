@@ -35,6 +35,7 @@ public:
   int getChannelsCount();
   Channel getChannelAt(int);
   Channel getChannel(int);
+  QList<Channel> getChannelsList();
   void setListName(const QString &);
   QString getListName();
   void setUrlTvg(const QString &);
