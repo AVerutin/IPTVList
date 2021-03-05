@@ -20,8 +20,9 @@ public:
 private:
     // Элементы главного окна приложения
     QWidget *mainWindget;
+    QVBoxLayout *mainLayout;
     QMenuBar *mainMenu;
-    QStatusBar *statusBar;
+    QStatusBar *statBar;
     QTableView *tvChannels;
 
     // Элементы главного меню

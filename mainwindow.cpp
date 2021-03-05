@@ -4,6 +4,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     createMenu();
+    createWidget();
 }
 
 MainWindow::~MainWindow()
@@ -14,7 +15,23 @@ MainWindow::~MainWindow()
 /// Создание главной формы приложения
 void MainWindow::createWidget()
 {
+    tvChannels = new QTableView(this);
 
+    statBar = statusBar();
+    statBar->setSizeGripEnabled(false);
+    statBar->showMessage("Готово");
+
+    mainLayout = new QVBoxLayout(this);
+    mainLayout->addWidget(tvChannels);
+    mainLayout->setContentsMargins(0,0,0,0);
+
+    mainWindget = new QWidget(this);
+    mainWindget->setLayout(mainLayout);
+
+    setCentralWidget(mainWindget);
+    setFixedSize(750, 550);
+    setWindowTitle("База каналов IPTV");
+    setWindowIcon(QIcon(":/icons/icon.ico"));
 }
 
 
